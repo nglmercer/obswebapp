@@ -24,7 +24,8 @@
     "nodedb-json": "^1.0.0",
     "obs-websocket-js": "^5.0.6",
     "qrcode": "^1.5.4",
-    "socket.io": "^4.8.1"
+    "socket.io": "^4.8.1",
+    "@nut-tree-fork/nut-js": "^4.2.2"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config": "^1.0.2",
