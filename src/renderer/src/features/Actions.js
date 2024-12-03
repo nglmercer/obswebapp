@@ -3,7 +3,7 @@ import { databases, IndexedDBManager, DBObserver } from '../database/indexdb.js'
 import { Counter, TypeofData,ComboTracker, replaceVariables, compareObjects,UserInteractionTracker } from '../utils/utils.js'
 import showAlert from '../components/alerts.js';
 import {mapsvgoutline, mapsvgsolid} from "../assets/svg.js"
-import { filterworddefault,keyboard, valueboard, optionskeyboard } from "../assets/jsondata.js"
+import { filterworddefault,keyboard, valueboard, optionskeyboard, optionsvalueboard } from "../assets/jsondata.js"
 import { getTranslation, translations } from '../translations.js';
 import { sendcommandmc } from './Minecraftconfig.js'
 import { Replacetextoread, addfilterword } from './speechconfig.js'
@@ -152,6 +152,27 @@ const actionsconfig = {
       label: 'toggle',
     },
     //...(await returnlistofsources(getlastdatafromstorage("getScenesList",[])?.scenes)),//getAllscenes())), 
+  },
+  keypress: {
+    type: 'object',
+    label: 'keypress',
+    open: true,
+    check: {
+      class: 'filled-in',
+      label: 'check',
+      type: 'checkbox',
+      returnType: 'boolean',
+    },
+    key: {
+      class: 'input-default',
+      type: 'multiSelect',
+      label: 'keypress',
+      options: optionsvalueboard,
+      showWhen: {
+        field: 'keypress_check',
+        value: true
+      }
+    },
   },
   save: {
     class: 'default-button',
@@ -317,7 +338,7 @@ actionsform.initialize()
         mode: 'multi',
         name: 'keypress_key',
         label: 'keypress',
-        options: optionskeyboard,
+        options: optionsvalueboard,
         showWhen: {
             field: 'keypress_check',
             value: true
@@ -526,7 +547,7 @@ async function execobsaction(data) {
 async function executekeys(data) {
   if (data.keypress && data.keypress.check) {
     const values = data.keypress.key;
-    socketManager.emitMessage("keypress",values);
+    socketManager.emitMessage("presskey",values);
   }
 }
 function getValueByKey(value, object) {

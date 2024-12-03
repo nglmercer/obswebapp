@@ -274,6 +274,10 @@ const optionskeyboard = Object.entries(keyboard).map(([value, label]) => ({
   value,
   label,
 }));
+const optionsvalueboard = Object.entries(keyboard).map(([values, labels]) => ({
+  value:labels,
+  label:labels,
+}));
 /* 
 sendtestevent(item)
 const keycontrolpress = Object.keys(item.keyvalue).map(key => item.keyvalue[key]);
@@ -516,4 +520,4 @@ const filterworddefault = [
     "frahcasado",
     "aneada te"
   ]
-export { filterworddefault,keyboard, valueboard, optionskeyboard };
+export { filterworddefault,keyboard, valueboard, optionskeyboard, optionsvalueboard };
