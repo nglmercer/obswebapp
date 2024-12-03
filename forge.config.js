@@ -16,6 +16,7 @@ module.exports = {
       name: '@electron-forge/maker-deb',
       config: {
         options: {
+          bin: 'obswebapp',
           maintainer: 'melser',
           homepage: 'https://github.com/nglmercer',
         },

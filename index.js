@@ -13,8 +13,10 @@ import { injectQRCode, socketemitQRCode, getLocalIPAddress } from './features/Ge
 //require
 const { app, shell, BrowserWindow, ipcMain } = require('electron')
 const { join } = require('path')
-const { electronApp, optimizer, is } = require('@electron-toolkit/utils')
-const fs = require("fs");
+/* const { electronApp, optimizer, is } = require('@electron-toolkit/utils')
+ */
+/* const fs = require("fs");
+ */
 const keynut = require("./features/keycontroll.js");
 //const icon = require('../../resources/icon.png?asset')
 const SocketHandler = require("./server/socketServer.js");
@@ -142,13 +144,13 @@ function handleKeyPress(socket, key) {
 startServer()
 app.whenReady().then(() => {
   // Set app user model id for windows
-  electronApp.setAppUserModelId('com.electron')
-
+/*   electronApp.setAppUserModelId('com.electron')
+ */
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.
-  app.on('browser-window-created', (_, window) => {
+/*   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
-  })
+  }) */
 
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
