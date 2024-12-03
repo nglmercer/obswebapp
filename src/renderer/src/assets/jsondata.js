@@ -516,4 +516,4 @@ const filterworddefault = [
     "frahcasado",
     "aneada te"
   ]
-export { filterworddefault }
+export { filterworddefault,keyboard, valueboard, optionskeyboard };

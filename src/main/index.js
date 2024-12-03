@@ -2,7 +2,7 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import fs from "fs";
-
+import keynut from "./features/keycontroll.js";
 import icon from '../../resources/icon.png?asset'
 import SocketHandler from "./server/socketServer";
 import { HttpExpressServer, HttpsExpressServer } from "./server/ExpressServe";
@@ -73,6 +73,8 @@ function handleSocketEvents(socket, index, Port) {
     socket.emit("responseobs",response,"changeInputVolume");
     console.log("response", response);
   });
+  socket.on("presskey", (key) => handleKeyPress(socket, key));
+  socket.on("pressKey2", (key) => handleKeyPress2(socket, key));
   socket.on("disconnect", () => {
     console.log("disconnect");
   });
@@ -108,7 +110,24 @@ function createWindow() {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
 }
+function handleKeyPress2(socket, key) {
+  try{
+  console.log("keypressed2", key);
+  keynut.keyboardController.handleKeyPress(key)
+  } catch (error) {
+    console.error("Error al presionar el teclado:", error);
+  }
+}
+function handleKeyPress(socket, key) {
+  console.log("keypressed", key);
 
+  try {
+    keynut.keyboardController.parseAndExecuteKeyCommand(key);
+    socket.emit("keypressed", key);
+  } catch (error) {
+    socket.emit("error", error.message);
+  }
+}
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
