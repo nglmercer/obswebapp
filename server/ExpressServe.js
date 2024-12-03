@@ -1,7 +1,9 @@
-import http from "http";
+/* import http from "http";
 import https from "https";
-import BaseExpressServer from "./BaseExpressServer";
-
+import BaseExpressServer from "./BaseExpressServer"; */
+const http = require("http");
+const https = require("https");
+const BaseExpressServer = require("./BaseExpressServer");
 class HttpExpressServer extends BaseExpressServer {
   initialize(port = 3000) {
     this.setupMiddleware();
@@ -20,5 +22,6 @@ class HttpsExpressServer extends BaseExpressServer {
     return this.listenOnPort(port);
   }
 }
-
-export { HttpExpressServer, HttpsExpressServer };
+module.exports = { HttpExpressServer, HttpsExpressServer };
+/* export { HttpExpressServer, HttpsExpressServer };
+ */

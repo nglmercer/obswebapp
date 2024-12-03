@@ -1,5 +1,7 @@
-import {OBSWebSocket} from 'obs-websocket-js';
-import NodedbJson from "nodedb-json";
+/* import {OBSWebSocket} from 'obs-websocket-js';
+import NodedbJson from "nodedb-json"; */
+const { OBSWebSocket } = require('obs-websocket-js');
+const NodedbJson = require("nodedb-json");
 const db = new NodedbJson('./db.json')
 const defaultobsdata = db.get("defaultobsdata") || {//JSON.parse(localStorage.getItem("defaultobsdata"))||
     ip: "127.0.0.1",
@@ -748,4 +750,5 @@ async function executebykeyasync(key= "getVersion") {
     setSourceVisibility: setSourceVisibility,
     createClip: createClip,
 } */
-export { mapedarrayobs, arrayobs,functionsWithoutParams,executebykeyasync };
+/* export { mapedarrayobs, arrayobs,functionsWithoutParams,executebykeyasync }; */
+module.exports = { mapedarrayobs, arrayobs,functionsWithoutParams,executebykeyasync };

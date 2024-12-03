@@ -24,11 +24,11 @@ $ npm run dev
 
 ```bash
 # For windows
-$ npm run build:win
-
-# For macOS
-$ npm run build:mac
-
-# For Linux
-$ npm run build:linux
+$ npm run make
+# For linux
+$ npm run make -- --platform=linux
+# Linux deb
+$ npm run make -- --platform=linux --arch=x64
+# Linux arm64
+$ npm run make -- --platform=linux --arch=arm64
 ```

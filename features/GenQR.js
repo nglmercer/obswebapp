@@ -1,5 +1,7 @@
-import os from "os";
-import QRCode from "qrcode";
+/* import os from "os";
+import QRCode from "qrcode"; */
+const os = require("os");
+const QRCode = require("qrcode");
 function QRModalsave(qrCode, urlToQR) {
     localStorage.setItem("qrCode", qrCode);
     localStorage.setItem("urlToQR", urlToQR);
@@ -51,4 +53,6 @@ const socketemitQRCode = (socket, port) => {
     })
     
 };
-export {injectQRCode, socketemitQRCode, getLocalIPAddress};
+/* export {injectQRCode, socketemitQRCode, getLocalIPAddress};
+ */
+module.exports = {injectQRCode, socketemitQRCode, getLocalIPAddress};

@@ -1,10 +1,1 @@
-{
-  "defaultobsdata": {
-    "ip": "192.168.100.11",
-    "port": 4455,
-    "auth": {
-      "check": false,
-      "password": false
-    }
-  }
-}
+{}

@@ -1,7 +1,11 @@
-import express from "express";
+/* import express from "express";
 import cors from "cors";
-import { join } from "path";
-
+import { join } from "path"; */
+const express = require("express");
+const cors = require("cors");
+const { join } = require("path");
+const path = require("path");
+console.log(__dirname,path.join(__dirname, "../public"), "this is url");
 class BaseExpressServer {
   constructor() {
     this.app = express();
@@ -13,7 +17,7 @@ class BaseExpressServer {
   setupMiddleware() {
     this.app.use(cors());
     this.app.use(express.json());
-    this.app.use(express.static(join(__dirname, "../renderer")));
+    this.app.use(express.static(join(__dirname, "../public")));
   }
 
   listenOnPort(port) {
@@ -92,4 +96,6 @@ class BaseExpressServer {
   }
 }
 
-export default BaseExpressServer;
+/* export default BaseExpressServer;
+ */
+module.exports = BaseExpressServer;

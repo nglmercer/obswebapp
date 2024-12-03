@@ -1,4 +1,5 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+//import
+/* import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import fs from "fs";
@@ -8,9 +9,20 @@ import SocketHandler from "./server/socketServer";
 import { HttpExpressServer, HttpsExpressServer } from "./server/ExpressServe";
 import { mapedarrayobs, arrayobs,functionsWithoutParams,executebykeyasync } from './features/obscontroller.js';
 import { injectQRCode, socketemitQRCode, getLocalIPAddress } from './features/GenQR.js';
-
-//import { Socket } from 'net';
-
+ */
+//require
+const { app, shell, BrowserWindow, ipcMain } = require('electron')
+const { join } = require('path')
+const { electronApp, optimizer, is } = require('@electron-toolkit/utils')
+const fs = require("fs");
+const keynut = require("./features/keycontroll.js");
+//const icon = require('../../resources/icon.png?asset')
+const SocketHandler = require("./server/socketServer.js");
+const { HttpExpressServer, HttpsExpressServer } = require("./server/ExpressServe.js");
+const { mapedarrayobs, arrayobs,functionsWithoutParams,executebykeyasync } = require('./features/obscontroller.js');
+const { injectQRCode, socketemitQRCode, getLocalIPAddress } = require('./features/GenQR.js');
+const e = require('express');
+const env = require('dotenv').config();
 const socketHandler = new SocketHandler();
 const newsocketHandler = new SocketHandler();
 const httpServer = new HttpExpressServer();
@@ -22,8 +34,8 @@ let io;
 async function startServer() {
   const httpPort = 8090;
   const httpsPort = 0;
-  const privateKey = process.env.PRIVATE_KEY || import.meta.env.VITE_PRIVATE_KEY;
-  const certificate = process.env.CERTIFICATE || import.meta.env.VITE_CERTIFICATE;
+  const privateKey = process.env.PRIVATE_KEY || env.PRIVATE_KEY;
+  const certificate = process.env.CERTIFICATE || env.CERTIFICATE;
   console.log("privateKey", privateKey,"certificate", certificate);
   const credentials = { key: privateKey, cert: certificate };
   await httpServer.initialize(httpPort);
@@ -87,9 +99,8 @@ function createWindow() {
     height: 670,
     show: false,
     autoHideMenuBar: true,
-    ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
+      //preload: join(__dirname, '../preload/index.js'),
       sandbox: false
     }
   })
@@ -105,11 +116,7 @@ function createWindow() {
 
   // HMR for renderer base on electron-vite cli.
   // Load the remote URL for development or the local html file for production.
-  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
-  } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
-  }
+ mainWindow.loadURL("http://localhost:8090/")
 }
 function handleKeyPress2(socket, key) {
   try{

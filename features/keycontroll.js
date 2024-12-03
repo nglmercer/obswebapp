@@ -1,4 +1,4 @@
-import {
+/* import {
     mouse,
     screen,
     sleep,
@@ -8,7 +8,18 @@ import {
     keyboard,
     Key,
     clipboard,
-  } from "@nut-tree-fork/nut-js";
+  } from "@nut-tree-fork/nut-js"; */
+  const {
+    mouse,
+    screen,
+    sleep,
+    useConsoleLogger,
+    ConsoleLogLevel,
+    Point,
+    keyboard,
+    Key,
+    clipboard,
+  } = require("@nut-tree-fork/nut-js");
   
   class MouseController {
     constructor() {
@@ -204,10 +215,10 @@ import {
   
   const keyboardController = new KeyboardController();
   
-  export default {
+/*   export default {
     mouseController,
     getKeyboardControlsAsJSONKey,
     keyboardController,
-  };
+  }; */
   
-  // module.exports = { mouseController, getKeyboardControlsAsJSONKey, keyboardController };
+ module.exports = { mouseController, getKeyboardControlsAsJSONKey, keyboardController };

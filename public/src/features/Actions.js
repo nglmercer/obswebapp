@@ -391,7 +391,7 @@ async function mapgetAllscenesScenenameSceneindex(scenesPromise) {
   // Espera a que la promesa se resuelva antes de proceder
   const scenes = await scenesPromise;
   console.log("mapgetAllscenesScenenameSceneindex",scenes);
-
+  if (!scenes || scenes.length <= 0) return [];
   // Ahora que `scenes` es un array, puedes usar `map()`
   return await Promise.all(scenes.map(async (scene) => {
     return {

@@ -1,5 +1,6 @@
-import { Server } from "socket.io";
-
+/* import { Server } from "socket.io";
+ */
+const { Server } = require("socket.io");
 class SocketHandler {
   constructor() {
     this.io = null;
@@ -97,4 +98,6 @@ class SocketHandler {
 
 // socketHandler.emitallusers('someEvent', { key: 'value' });
 
-export default SocketHandler;
+/* export default SocketHandler;
+ */
+module.exports = SocketHandler;
