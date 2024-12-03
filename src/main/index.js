@@ -73,7 +73,8 @@ function handleSocketEvents(socket, index, Port) {
     socket.emit("responseobs",response,"changeInputVolume");
     console.log("response", response);
   });
-  socket.on("presskey", (key) => handleKeyPress(socket, key));
+/*   socket.on("setInputVolume", async (data) => console.log("setInputVolume",data));
+ */  socket.on("presskey", (key) => handleKeyPress(socket, key));
   socket.on("pressKey2", (key) => handleKeyPress2(socket, key));
   socket.on("disconnect", () => {
     console.log("disconnect");

@@ -1,3 +1,191 @@
+import { getTranslation } from '../translations.js';
+class LocalStorageManager {
+  constructor(key) {
+    this.key = key;
+    this.initializeStorage();
+  }
+
+  async initializeStorage() {
+    try {
+      const currentData = await this.getAll();
+      if (!currentData.length) {
+        await this.saveItems([]);
+      }
+    } catch (error) {
+      this.handleError('Error initializing storage', error);
+    }
+  }
+
+  deepCopy(obj) {
+    try {
+      return JSON.parse(JSON.stringify(obj));
+    } catch (error) {
+      this.handleError('Error creating deep copy', error);
+      return null;
+    }
+  }
+
+  // Método para generar un nuevo ID único o reusar un ID existente
+  generateUniqueId(items, proposedId = null) {
+    // Convertir ID a número si es un string
+    proposedId = proposedId !== null ? Number(proposedId) : null;
+
+    const existingIds = new Set(items.map(item => item.id));
+    
+    // Encontrar espacios vacíos
+    const findEmptySpace = () => {
+      for (let i = 0; i <= items.length; i++) {
+        if (!existingIds.has(i)) {
+          return i;
+        }
+      }
+      return items.length;
+    };
+
+    // Si se propone un ID específico
+    if (proposedId !== null) {
+      // Si el ID propuesto no existe, usarlo
+      if (!existingIds.has(proposedId)) {
+        return proposedId;
+      }
+      
+      // Buscar el primer espacio vacío
+      return findEmptySpace();
+    }
+    
+    // Si no hay ID propuesto, encontrar el primer espacio vacío
+    return findEmptySpace();
+  }
+
+  // Método para asegurar que un objeto tenga un ID único
+  ensureObjectHasId(item, items) {
+    const itemCopy = this.deepCopy(item);
+    
+    // Convertir ID a número si es un string
+    if (itemCopy.id !== undefined) {
+      itemCopy.id = Number(itemCopy.id);
+    }
+    
+    // Generar o ajustar el ID
+    itemCopy.id = this.generateUniqueId(items, itemCopy.id);
+    
+    return itemCopy;
+  }
+
+  async add(item) {
+    try {
+      const items = await this.getAll();
+      
+      // Aseguramos que el item tenga un ID único
+      const itemWithId = this.ensureObjectHasId(item, items);
+      
+      // Verificamos si ya existe un objeto similar
+      const exists = items.some(existingItem =>
+        this.areObjectsEqual(existingItem, itemWithId)
+      );
+      
+      if (!exists) {
+        items.push(itemWithId);
+        await this.saveItems(items);
+        return itemWithId.id;
+      }
+      
+      return false;
+    } catch (error) {
+      this.handleError('Error adding item', error);
+    }
+  }
+
+  // Los demás métodos permanecen igual que en la versión anterior
+  async remove(identifier) {
+    try {
+      const items = await this.getAll();
+      // Convertir identificador a número si es posible
+      const numIdentifier = isNaN(Number(identifier)) ? identifier : Number(identifier);
+      
+      const updatedItems = items.filter(item =>
+        item.id !== numIdentifier && item.name !== numIdentifier
+      );
+      
+      if (updatedItems.length !== items.length) {
+        await this.saveItems(updatedItems);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      this.handleError('Error removing item', error);
+    }
+  }
+
+  async get(identifier) {
+    try {
+      const items = await this.getAll();
+      // Convertir identificador a número si es posible
+      const numIdentifier = isNaN(Number(identifier)) ? identifier : Number(identifier);
+      
+      const item = items.find(item =>
+        item.id === numIdentifier || item.name === numIdentifier
+      );
+      
+      return item ? this.deepCopy(item) : null;
+    } catch (error) {
+      this.handleError('Error getting item', error);
+    }
+  }
+
+  async getAll() {
+    try {
+      const items = localStorage.getItem(this.key);
+      return items ? this.deepCopy(JSON.parse(items)) : [];
+    } catch (error) {
+      this.handleError('Error getting all items', error);
+    }
+  }
+
+  async saveItems(items) {
+    try {
+      const itemsCopy = this.deepCopy(items);
+      localStorage.setItem(this.key, JSON.stringify(itemsCopy));
+    } catch (error) {
+      this.handleError('Error saving items', error);
+    }
+  }
+
+  async clear() {
+    try {
+      await this.saveItems([]);
+    } catch (error) {
+      this.handleError('Error clearing storage', error);
+    }
+  }
+
+  async exists(item) {
+    try {
+      const items = await this.getAll();
+      const itemWithId = this.ensureObjectHasId(item, items);
+      
+      return items.some(existingItem =>
+        this.areObjectsEqual(existingItem, itemWithId)
+      );
+    } catch (error) {
+      this.handleError('Error checking existence', error);
+    }
+  }
+
+  areObjectsEqual(obj1, obj2) {
+    try {
+      return JSON.stringify(obj1) === JSON.stringify(obj2);
+    } catch (error) {
+      this.handleError('Error comparing objects', error);
+      return false;
+    }
+  }
+
+  handleError(message, error) {
+    console.error(message, error);
+    throw error;
+  }
+}
 class TypeofData {
     // Verificar si el valor es un objeto
     static isObject(value) {
@@ -117,7 +305,62 @@ class TypeofData {
       return 'unknown';
     }
 }
-  
+function flattenObject(obj, separator = '_') {
+  const result = {};
+
+  function recurse(current, path = '') {
+      // Maneja valores primitivos y null
+      if (Object(current) !== current) {
+          result[path.slice(0, -1)] = current;
+          return;
+      }
+
+      // Maneja arrays
+      if (Array.isArray(current)) {
+          result[path.slice(0, -1)] = current; // Guarda el array como tal
+          return;
+      }
+
+      // Maneja objetos
+      for (const key in current) {
+          const newPath = path + key + separator;
+          recurse(current[key], newPath);
+      }
+  }
+
+  recurse(obj);
+  return result;
+}
+
+// Función para reconstituir un objeto plano a su forma original
+function unflattenObject(obj, separator = '_') {
+  const result = {};
+
+  for (const key in obj) {
+      const parts = key.split(separator);
+      let current = result;
+
+      for (let i = 0; i < parts.length - 1; i++) {
+          const part = parts[i];
+          if (!(part in current)) {
+              current[part] = {};
+          }
+          current = current[part];
+      }
+
+      const lastPart = parts[parts.length - 1];
+
+      // Detecta arrays al deshacer el aplanado
+      if (Array.isArray(obj[key])) {
+          current[lastPart] = obj[key];
+      } else {
+          current[lastPart] = obj[key];
+      }
+  }
+
+  return result;
+}
+
 // Ejemplo de usoquerySnapshot.forEach
 // console.log(TypeofData.isString("hello")); // true
 // console.log(TypeofData.isNumber(123)); // true
@@ -260,12 +503,9 @@ const EvaluerLikes = new LikeTracker(5000);
 const replaceVariables = (command, data, iscommand = false ) => {
   let playerName = localStorage.getItem('playerNameInput') || localStorage.getItem('playerName');
 
-  if (typeof command !== 'string') {
+  if (!command || typeof command !== 'string') {
     console.warn("Error: 'command' debe ser una cadena de texto.", typeof command);
     return command; // O lanzar un error si prefieres: throw new Error("'command' debe ser una cadena de texto.");
-  }
-  if (!command) {
-    return command;
   }
   if (iscommand && command.includes(" ")) {
     // Dividimos el string en máximo 2 partes usando el espacio como separador
@@ -303,34 +543,49 @@ class ObjectComparator {
     this.mainObject = mainObject;
   }
 
-  // Ahora devuelve todos los tipos de comparación para cada clave
-  compareKeys(objectsToCompare, keysToCheck) {
+  compareKeys(objectsToCompare, keysToCheck, includeTrueValues = false) {
     if (Array.isArray(objectsToCompare)) {
-      // Si es un array, procesamos todos los objetos
       return objectsToCompare.map(obj => {
-        return this.compareSingleObject(obj, keysToCheck);
+        return this.compareSingleObject(obj, keysToCheck, includeTrueValues);
       });
     } else {
-      // Si es un solo objeto, simplemente lo procesamos
-      return this.compareSingleObject(objectsToCompare, keysToCheck);
+      return this.compareSingleObject(objectsToCompare, keysToCheck, includeTrueValues);
     }
   }
 
-  compareSingleObject(obj, keysToCheck) {
+  compareSingleObject(obj, keysToCheck, includeTrueValues = false) {
     const result = {};
     keysToCheck.forEach(key => {
       const keyName = typeof key === 'object' ? key.key : key;
       const compareType =
         typeof key === 'object' && key.compare ? key.compare : 'isEqual';
+      
       result[keyName] = this.compareValues(
         this.mainObject[keyName],
-        obj[keyName]
+        obj[keyName],
+        compareType,
+        includeTrueValues
       );
     });
     return result;
   }
 
-  compareValues(value1, value2) {
+  compareValues(value1, value2, compareType = 'isEqual', includeTrueValues = false) {
+    // If includeTrueValues is true, allow special 'true' value matching
+    if (includeTrueValues && (value2 === 'true' || value1 === 'true')) {
+      return { 
+        isEqual: true, 
+        contains: true,
+        startsWith: true,
+        endsWith: true,
+        isInRange: true,
+        isLess: true,
+        isGreater: true,
+        isLessOrEqual: true,
+        isGreaterOrEqual: true
+      };
+    }
+
     if (typeof value1 === 'string' && typeof value2 === 'string') {
       return this.compareStrings(value1, value2);
     } else if (typeof value1 === 'number' && typeof value2 === 'number') {
@@ -340,18 +595,20 @@ class ObjectComparator {
     }
   }
 
+  // Rest of the methods remain the same as in the original code
   compareStrings(str1, str2) {
     return {
       isEqual: str1 === str2,
       contains: str1.includes(str2),
       startsWith: str1.startsWith(str2),
       endsWith: str1.endsWith(str2),
+      exists: str1 !== undefined && str2 !== undefined,
     };
   }
 
   compareNumbers(num1, num2) {
-    const maxRange2 = num2 * 1.1; // 110% del valor de num2
-    const minRange2 = num2 * 0.9; // 90% del valor de num2
+    const maxRange2 = num2 * 1.1; // 110% of num2 value
+    const minRange2 = num2 * 0.9; // 90% of num2 value
     return {
       isEqual: num1 === num2,
       isLess: num1 < num2,
@@ -359,53 +616,51 @@ class ObjectComparator {
       isLessOrEqual: num1 <= num2,
       isGreaterOrEqual: num1 >= num2,
       isInRange: num1 >= minRange2 && num1 <= maxRange2,
+      exists: num1 !== undefined && num2 !== undefined,
     };
   }
 }
 
-function compareObjects(mainObject, objectsToCompare, keysToCheck, callback) {
+function compareObjects(mainObject, objectsToCompare, keysToCheck, callback, includeTrueValues = false) {
   const comparator = new ObjectComparator(mainObject);
   const comparisonResults = comparator.compareKeys(
     objectsToCompare,
-    keysToCheck
+    keysToCheck,
+    includeTrueValues
   );
   const validResults = [];
   let coincidentobjects = {};
-  // Ejecutar el callback si se proporciona
+
   if (callback && typeof callback === 'function') {
     comparisonResults.forEach((comparisonResult, index) => {
       const allComparisonsTrue = getComparisonValues(
         comparisonResult,
         keysToCheck
       );
-      
+     
       if (allComparisonsTrue.allTrue) {
-        callback(objectsToCompare[index], index,allComparisonsTrue);
+        callback(objectsToCompare[index], index, allComparisonsTrue);
         validResults.push(objectsToCompare[index]);
         coincidentobjects = allComparisonsTrue;
       }
     });
   }
 
-  return { comparisonResults, validResults, coincidentobjects }; // Retornar solo los objetos válidos
+  return { comparisonResults, validResults, coincidentobjects };
 }
+
 function getComparisonValues(obj, keysToCheck) {
   const result = {};
-  let allTrue = true; // Variable para rastrear si todos son true
-
+  let allTrue = true;
   keysToCheck.forEach(({ key, compare }) => {
     if (obj[key] && obj[key][compare] !== undefined) {
       result[key] = obj[key][compare];
-      // Si alguno de los valores no es true, establecer allTrue en false
       if (!obj[key][compare]) {
         allTrue = false;
       }
     }
   });
-
-  // Añadir el resultado de la verificación allTrue
   result.allTrue = allTrue;
-
   return result;
 }
 class Logger {
@@ -477,8 +732,10 @@ logger.addCategory('minecraft', true);
 logger.addCategory('Event', true);
 logger.addCategory('Action', true);
 logger.addCategory('EventAction', true);
-logger.toggleCategory('debug', false);
-logger.toggleCategory('speechchat', false);
+logger.addCategory('renderhtml', true);
+logger.toggleCategory('renderhtml', false);
+logger.toggleCategory('debug', true);
+logger.toggleCategory('speechchat', true);
 console.log(logger.listCategories());
 // // Logs en diferentes categorías
 // logger.log('datos', 'Este es un mensaje de la categoría datos', {
@@ -663,5 +920,226 @@ class UserInteractionTracker {
     });
   }
 }
-export { Counter, TypeofData,ComboTracker, replaceVariables, compareObjects, logger, UserInteractionTracker, EvaluerLikes };
+class ArrayStorageManager {
+  constructor(storageKey) {
+      this.storageKey = storageKey;
+      this.items = this.getAll();
+  }
+
+  getAll() {
+      const stored = localStorage.getItem(this.storageKey);
+      return stored ? JSON.parse(stored) : [];
+  }
+
+  saveToStorage() {
+      localStorage.setItem(this.storageKey, JSON.stringify(this.items));
+  }
+
+  validateInput(item) {
+      if (typeof item !== 'string') return false;
+      if (item.length <= 1) return false;
+      return true;
+  }
+
+  existInItems(text) {
+      const normalizedText = text.toLowerCase();
+      return this.items.some(item =>
+          item.toLowerCase() === normalizedText
+      );
+  }
+  // Verificar si algún item está contenido en el texto
+  containswordInitems(text) {
+      const normalizedText = text.toLowerCase();
+      return this.items.some(item =>
+          normalizedText.includes(item.toLowerCase())
+      );
+  }
+
+  // Verificar si el texto existe como item o contiene algún item
+  containword(text) {
+      if (!this.validateInput(text)) return false;
+      return this.existInItems(text) || this.containswordInitems(text);
+  }
+  add(item) {
+      if (!this.validateInput(item)) return false;
+      if (!this.existInItems(item)) {
+          this.items.push(item);
+          this.saveToStorage();
+          return true;
+      }
+      return false;
+  }
+
+  remove(item) {
+      const initialLength = this.items.length;
+      this.items = this.items.filter(existingItem =>
+          existingItem.toLowerCase() !== item.toLowerCase()
+      );
+      if (this.items.length !== initialLength) {
+          this.saveToStorage();
+          return true;
+      }
+      return false;
+  }
+}
+class ArrayManagerUI {
+  constructor(storageManager,defaultelements) {
+      this.manager = storageManager;
+      this.defaultelements = defaultelements;
+  }
+
+  // Genera el contenedor del HTML como un nodo DOM
+  createElement(tag, options = {}, children = []) {
+      const element = document.createElement(tag);
+      
+      // Asignar propiedades del elemento
+      if (options.classes) element.className = options.classes;
+      if (options.attributes) {
+          Object.entries(options.attributes).forEach(([key, value]) => {
+              element.setAttribute(key, value);
+          });
+      }
+      if (options.textContent) element.textContent = options.textContent;
+      if (options.html) element.innerHTML = options.html;
+
+      // Añadir hijos
+      children.forEach(child => {
+          element.appendChild(child);
+      });
+
+      return element;
+  }
+
+  // Retorna el contenedor HTML como nodo DOM
+  getHTML() {
+      const storageKeyname = this.manager.storageKey;
+
+      const title = this.createElement('h2', {
+          classes: 'modal-title',
+          html: `<translate-text key="${storageKeyname}"></translate-text>`,
+      });
+
+      const input = this.createElement('input', {
+          classes: 'array-manager-input',
+          attributes: {
+              type: 'text',
+              placeholder: getTranslation('addelement'),
+          },
+      });
+
+      const addButton = this.createElement('button', {
+          classes: 'array-manager-add open-modal-btn',
+          textContent: getTranslation('add'),
+      });
+
+      const defaultButton = this.createElement('button', {
+          classes: 'array-manager-default open-modal-btn',
+          textContent: `${getTranslation('default')} ${getTranslation(storageKeyname)}`,
+      });
+
+      const inputContainer = this.createElement('div', {
+          classes: 'input-container',
+      }, [input, addButton, defaultButton]);
+
+      const errorMessage = this.createElement('div', {
+          classes: 'array-manager-error error-message',
+          textContent: 'El texto debe tener al menos 2 caracteres',
+      });
+
+      const itemsContainer = this.createElement('div', {
+          classes: 'array-manager-items items-container',
+      });
+
+      const container = this.createElement('div', {
+          classes: 'array-manager-container',
+          attributes: { 'data-component': 'array-manager' },
+      }, [title, inputContainer, errorMessage, itemsContainer]);
+
+      return container;
+  }
+
+  // Método para inicializar los event listeners
+  initializeEventListeners(containerElement) {
+      if (!containerElement) {
+          console.error('No se proporcionó un elemento contenedor válido');
+          return;
+      }
+
+      const input = containerElement.querySelector('.array-manager-input');
+      const addButton = containerElement.querySelector('.array-manager-add');
+      const defaultButton = containerElement.querySelector('.array-manager-default');
+      const errorMessage = containerElement.querySelector('.array-manager-error');
+      const itemsContainer = containerElement.querySelector('.array-manager-items');
+
+      const createItemElement = (text) => {
+          const itemDiv = this.createElement('div', { classes: 'item' }, [
+              this.createElement('span', { textContent: text }),
+              this.createElement('button', {
+                  classes: 'delete-btn',
+                  textContent: '×',
+              }),
+          ]);
+
+          const deleteButton = itemDiv.querySelector('.delete-btn');
+          deleteButton.addEventListener('click', () => {
+              this.manager.remove(text);
+              itemDiv.remove();
+          });
+
+          itemsContainer.appendChild(itemDiv);
+      };
+
+      const handleAddItem = (text = input.value.trim()) => {
+          errorMessage.style.display = 'none';
+          if (this.manager.validateInput(text)) {
+              if (this.manager.add(text)) {
+                  createItemElement(text);
+                  if (text === input.value.trim()) {
+                      input.value = '';
+                  }
+              }
+          } else {
+              errorMessage.style.display = 'block';
+          }
+      };
+
+      const loadItems = () => {
+          itemsContainer.innerHTML = '';
+          this.manager.getAll().forEach(item => createItemElement(item));
+      };
+
+      const handleAddDefault = () => {
+        this.defaultelements.forEach(text => handleAddItem(text));
+      };
+
+      addButton.addEventListener('click', () => handleAddItem());
+      defaultButton.addEventListener('click', handleAddDefault);
+      input.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') handleAddItem();
+      });
+
+      loadItems();
+
+      return { loadItems, addItem: handleAddItem, addDefault: handleAddDefault };
+  }
+}
+function getallfilesmap(objetc) {
+  try {
+    logger.log("renderhtml","getallfilesmap",objetc);
+    const filesmap = objetc.map(file => ({
+      value: file.id,
+      label: file.nombre,
+      path: file.path,
+      mediaType: file.mediaType || file.type,
+      mediaUrl: file.mediaUrl || file.path,
+      id: file.id,
+    }));
+    logger.log("renderhtml","filesmap",filesmap);
+    return filesmap;
+  } catch (error) {
+    console.error('Error getting all files:', error);
+    return {};
+  }
+}
+export {LocalStorageManager,unflattenObject, flattenObject, Counter, TypeofData,ComboTracker, replaceVariables, compareObjects, logger, UserInteractionTracker, EvaluerLikes, ArrayStorageManager, ArrayManagerUI,getallfilesmap };
   

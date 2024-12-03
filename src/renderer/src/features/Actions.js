@@ -3,10 +3,12 @@ import { databases, IndexedDBManager, DBObserver } from '../database/indexdb.js'
 import { Counter, TypeofData,ComboTracker, replaceVariables, compareObjects,UserInteractionTracker } from '../utils/utils.js'
 import showAlert from '../components/alerts.js';
 import {mapsvgoutline, mapsvgsolid} from "../assets/svg.js"
+import { filterworddefault,keyboard, valueboard, optionskeyboard } from "../assets/jsondata.js"
 import { getTranslation, translations } from '../translations.js';
 import { sendcommandmc } from './Minecraftconfig.js'
 import { Replacetextoread, addfilterword } from './speechconfig.js'
 import { mapedarrayobs, arrayobs,executebykeyasync } from './obcontroller.js'
+import { unflattenObject, flattenObject } from '../utils/utils.js'
 const ObserverActions = new DBObserver();
 const ActionsManager = new IndexedDBManager(databases.ActionsDB,ObserverActions);
 function replaceNestedValue(obj, path, newValue) {
@@ -192,6 +194,151 @@ const actionsconfig = {
     hidden: true,
   }
 } 
+console.log("inputlist",returnlistofinputs(getlastdatafromstorage("getInputList",[]).inputs));
+const actionsform = document.createElement('dynamic-form');
+actionsform.initialize()
+    .addField({
+        type: 'text',
+        name: 'nombre',
+        label: 'nombre de accion',
+        value: 'nombre de accion',
+    })
+    .addField({ type: 'color', name: 'color', label: 'color', value: '#000000' })
+    .addField({ type: 'flexible-modal-selector', name: 'image', label: 'image', options: mapsvgoutline, value: 'imagen1.png' })
+    .addField({
+        type: 'checkbox',
+        name: 'minecraft_check',
+        label: 'minecraft',
+        value: false,
+    },{ rowGroup: "minecraftrow" })
+    .addField({
+        type: 'textarea',
+        name: 'minecraft_command',
+        label: 'command',
+        value: '/say hola',
+        showWhen: {
+            field: 'minecraft_check',
+            value: true
+        }
+    },{ rowGroup: "minecraftrow" })
+    .addField({
+        type: 'checkbox',
+        name: 'tts_check',
+        label: 'text to speech',
+        value: false,
+    }, { rowGroup: "ttsrow" })
+    .addField({
+        type: 'text',
+        name: 'tts_text',
+        label: 'text to speech',
+        value: '/say hola',
+        showWhen: {
+            field: 'tts_check',
+            value: true
+        }
+    },{ rowGroup: "ttsrow" })
+    .addField({
+        type: 'checkbox',
+        name: 'obs_check',
+        label: 'obs',
+        value: false,
+    }, { rowGroup: "obsrow" })
+    .addField({
+        type: 'flexible-modal-selector',
+        name: 'obs_action',
+        label: 'obs action',
+        options: mapedarrayobs,
+        value: 'change scene',
+        showWhen: {
+            field: 'obs_check',
+            value: true
+        },
+    },{ rowGroup: "obsrow" })
+    .addField({
+        type: 'flexible-modal-selector',
+        name: 'obs_inputName',
+        label: 'obs input',
+        options: await returnlistofinputs(getlastdatafromstorage("getInputList",[]).inputs),
+        showWhen: {
+            field: 'obs_check',
+            value: true
+        }
+    },{ rowGroup: "obsrow" })
+    .addField({
+        type: 'flexible-modal-selector',
+        name: 'obs_sceneName',
+        label: 'obs sceneName',
+        options: await mapgetAllscenesScenenameSceneindex(getlastdatafromstorage("getScenesList",[])?.scenes),
+        value: true,
+        showWhen: {
+            field: 'obs_check',
+            value: true
+        }
+    },{ rowGroup: "obsrow" })
+    .addField({
+        type: 'number',
+        name: 'obs_db',
+        label: 'obs decibelios',
+        value: 0,
+        showWhen: {
+            field: 'obs_check',
+            value: true
+        }
+    },{ rowGroup: "obsrow" })
+    .addField({
+        type: 'number',
+        name: 'obs_duration',
+        label: 'obs duration',
+        value: 60,
+        showWhen: {
+            field: 'obs_check',
+            value: true
+        }
+    },{ rowGroup: "obsrow" })
+    .addField({
+        type: 'checkbox',
+        name: 'obs_toggle',
+        label: 'obs toggle',
+        value: true,
+        showWhen: {
+            field: 'obs_check',
+            value: true
+        }
+    },{ rowGroup: "obsrow" })
+    .addField({
+        type: 'checkbox',
+        name: 'keypress_check',
+        label: 'keypress',
+        value: false,
+    }, { rowGroup: "keypressrow" })
+    .addField({
+        type: 'flexible-modal-selector',
+        mode: 'multi',
+        name: 'keypress_key',
+        label: 'keypress',
+        options: optionskeyboard,
+        showWhen: {
+            field: 'keypress_check',
+            value: true
+        }
+    }, { rowGroup: "keypressrow" })
+    .addField({
+        type: 'number',
+        name: 'id',
+        label: '',
+        hidden: true,
+    })
+    .render()
+    .toggleDarkMode(true);
+actionsform.addEventListener('form-change', (e) => {
+    console.log('Form values changed:', e.detail);
+    ///unflattenObject, flattenObject
+});
+actionsform.addEventListener('form-submit', (e) => {
+    console.log('Datos modificados:', e.detail);
+    console.log("flattenObject",flattenObject(e.detail))
+    console.log("unflattenObject",unflattenObject(flattenObject(e.detail)))
+});
 console.log(mapgetAllscenesScenenameSceneindex(getlastdatafromstorage("getScenesList",[])?.scenes),"mapgetAllscenesScenenameSceneindex");
 function getlastdatafromstorage(key,type=[]) {
     console.log("getlastdatafromstorage",JSON.parse(localStorage.getItem(key)),key);
@@ -251,7 +398,8 @@ async function returnlistofsources(sceneNamePromise) {
 }
 async function returnlistofinputs(arrayinputs) {
   console.log("returnlistofinputs", arrayinputs);
-  
+  try {
+      
   // Verificar que arrayinputs es un array
   if (!Array.isArray(arrayinputs)) {
     console.error("El parámetro no es un array:", arrayinputs);
@@ -265,6 +413,10 @@ async function returnlistofinputs(arrayinputs) {
 
   console.log("options", options);
   return options;
+  } catch (error) {
+    console.error("Error al obtener la lista de fuentes de entrada:", error);
+    return [];
+  }
 }
 
 const ActionModal = document.getElementById('ActionModal');
@@ -296,7 +448,7 @@ const testdata = {
 }
 const Aformelement = new EditModal(actionsconfig,testdata);
 const HtmlAformelement = Aformelement.ReturnHtml(testdata);
-document.querySelector('#ActionModalContainer').appendChild(HtmlAformelement);
+document.querySelector('#ActionModalContainer').appendChild(actionsform);
 Buttonform.className = 'open-modal-btn';
 Buttonform.onclick = () => {
   updatemodaldata(testdata)

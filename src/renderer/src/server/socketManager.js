@@ -28,11 +28,11 @@ class SocketManager {
   
   export const socketurl = {
     getport() {
-      const port = window.location.port || 8088;
+      const port = window.location.port || 8090;
       let socketUrl;
   
       if (port === '5173') {
-        socketUrl = this.constructSocketUrl(8088);
+        socketUrl = this.constructSocketUrl(8090);
       } else {
         console.log("port", port);
         socketUrl = this.constructSocketUrl(port);
