@@ -105,7 +105,7 @@ socketManager.on("responseobs",(response,key) => {
     if (key === "getInputList") renderavaibleinputs(response);
 });
 mapedarrayobs.forEach((value,key) => {
-    console.log("mapedarrayobs",key,value,value.value);
+    //console.log("mapedarrayobs",key,value,value.value);
     socketManager.on(value.value, async (...args) => {
       console.log("socketemitkey",key,value.value,...args);
       localStorage.setItem(value.value,JSON.stringify(args));

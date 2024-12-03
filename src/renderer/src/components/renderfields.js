@@ -1,4 +1,5 @@
 import { getTranslation, translations } from '../translations.js';
+import { logger } from '../utils/utils.js'
 class DynamicTable {
   constructor(containerSelector,config = {}) {
       this.config = config;
@@ -107,7 +108,7 @@ getRowAt(index) {
 // usando async y await
 
 async getRowIndex(searchData) {
-  console.log("getRowIndex", searchData);
+  //logger.log("renderhtml","getRowIndex", searchData);
   
   for (let i = 0; i < this.rows.length; i++) {
       const row = this.rows[i];
@@ -221,7 +222,7 @@ class DynamicRow {
           objectContainer.setAttribute('open', '');
         }
         const summary = document.createElement('summary');
-        //console.log("typeConfig summary", typeConfig, key);
+        //logger.log("renderhtml","typeConfig summary", typeConfig, key);
         summary.textContent = typeConfig.label || `${getTranslation('show')} ${getTranslation(key)}`;
 
         objectContainer.appendChild(summary);
@@ -245,7 +246,7 @@ class DynamicRow {
         cell.appendChild(objectContainer);
       } else {
         const inputElement = this.createInputElement(key, null, value, typeConfig, cell);
-        //console.log("inputElement", inputElement);
+        //logger.log("renderhtml","inputElement", inputElement);
         if (inputElement) {
           cell.appendChild(inputElement);
         } else {
@@ -309,6 +310,7 @@ class DynamicRow {
       select: () => this.createSelectElement(key, subKey, value, typeConfig, HtmlContainer),
       select2: () => this.createSelect2Element(key, subKey, value, typeConfig, HtmlContainer),
       multiSelect: () => this.createMultiSelectElement(key, subKey, value, typeConfig),
+      multiSelect2: () => this.createMultiSelectElement2(key, subKey, value, typeConfig),
       color: () => this.createColorField(key, subKey, value, typeConfig, HtmlContainer),
       radio: () => this.createRadioElement(key, subKey, value, typeConfig, HtmlContainer),
       button: () => this.createButtonElement(key, subKey, value, typeConfig, HtmlContainer),
@@ -441,9 +443,9 @@ class DynamicRow {
     if (typeConfig.toggleoptions) setTimeout(this.handletoggleoptions(subKey, value, HtmlContainer), 500);
     // Añadir el evento change
     selectComponent.addEventListener('change', (e) => {
-        console.log('Seleccionado:', e.detail);
-        console.log('Valor:', selectComponent.getValue());
-        console.log('mySelect:', selectComponent.value);
+        logger.log("renderhtml",'Seleccionado:', e.detail);
+        logger.log("renderhtml",'Valor:', selectComponent.getValue());
+        logger.log("renderhtml",'mySelect:', selectComponent.value);
         this.updateModifiedData(key, subKey, selectComponent.value);
         if (typeConfig.toggleoptions) this.handletoggleoptions(subKey, selectComponent.value, HtmlContainer);
         
@@ -456,6 +458,8 @@ class DynamicRow {
       labelElement.classList.add('label');
       labelElement.setAttribute('for', key);
       divElement.appendChild(labelElement);
+    } else {
+      selectComponent.setLabel(key);
     }
     return divElement
   }
@@ -463,7 +467,7 @@ class DynamicRow {
     const divElement = document.createElement('div');
     divElement.classList.add('div-radio-group');
     const uniquename = key + '_' + Math.random().toString(36).substring(2, 15);
-    console.log("select",typeConfig);
+    logger.log("renderhtml","select",typeConfig);
 
     if (typeConfig.options) {
         typeConfig.options.forEach(async (option) => {
@@ -582,7 +586,7 @@ class DynamicRow {
     inputElement.autocomplete = 'on';
     const subkeylabel = subKey ? subKey : inputElement.type
     inputElement.placeholder = key + ' ' +subkeylabel;
-    // console.log("createtexareaElement", key, subKey, value);
+    // logger.log("renderhtml","createtexareaElement", key, subKey, value);
     inputElement.cols = 50;
     inputElement.addEventListener('input', () => {
       const returnValue = inputElement.value;
@@ -596,7 +600,7 @@ class DynamicRow {
       options: typeConfig.options,
       name: key,
     };
-    // console.log("createMultiSelectElement", fieldConfig,value);
+    logger.log("renderhtml","createMultiSelectElement", fieldConfig,value);
     const multiSelectField = createMultiSelectField(fieldConfig, (selectedValues) => {
       this.updateModifiedData(key, subKey, selectedValues);
     }, value);
@@ -609,7 +613,7 @@ class DynamicRow {
       options: typeConfig.options,
       name: key,
     };
-    // console.log("createMultiSelectElement", fieldConfig,value);
+    // logger.log("renderhtml","createMultiSelectElement", fieldConfig,value);
     const colorField = createColorField(fieldConfig, (selectedColor) => {
       this.updateModifiedData(key, subKey, selectedColor);
     }, value);
@@ -626,24 +630,40 @@ class DynamicRow {
     }
   }
   handletoggleoptions(key, subKey, HtmlContainer, dataAttributes = []) {
-    const dataAbase = 'data-associated'
-    dataAttributes.push(`${dataAbase}-0`,`${dataAbase}-1`,`${dataAbase}-2`,dataAbase);
+    const dataAbase = 'data-associated';
+    dataAttributes.push(`${dataAbase}-0`,`${dataAbase}-1`,`${dataAbase}-2`, dataAbase);
+    
     // Crear el selector combinando todos los atributos
     const selector = dataAttributes.map(attr => `[${attr}]`).join(',');
     const fields = HtmlContainer.querySelectorAll(selector);
     
     if (!fields.length) return;
 
+    // Primero hacemos fade out de todos los elementos
     fields.forEach(field => {
-        // Verificar si alguno de los atributos coincide con subKey
-        const matches = dataAttributes.some(attr => 
-            field.getAttribute(attr) === subKey
-        );
-
-        field.style.display = matches ? 'block' : 'none';
+      field.style.opacity = '0';
     });
-}
 
+    // Esperamos a que termine la transición de fade out
+    setTimeout(() => {
+      fields.forEach(field => {
+        // Verificar si alguno de los atributos coincide con subKey
+        const matches = dataAttributes.some(attr =>
+          field.getAttribute(attr) === subKey
+        ) || field.getAttribute(dataAbase) === key;
+
+        if (matches) {
+          field.style.display = 'block';
+          // Aplicamos fade in solo a los elementos que deben mostrarse
+          setTimeout(() => {
+            field.style.opacity = '1';
+          }, 150);
+        } else {
+          field.style.display = 'none';
+        }
+      });
+    }, 500); // Este tiempo debe coincidir con la duración de la transición
+  }
   updateData(newData) {
     this.data = { ...newData };
     this.originalData = { ...newData };
@@ -709,7 +729,7 @@ function createMultiSelectField1(field, onChangeCallback, value) {
       gridSelect.appendChild(checkbox);
     });
   }
-  console.log("field",field)
+  logger.log("renderhtml","field",field)
   // Inicializar las opciones
   renderOptions(field.options);
 
@@ -747,35 +767,27 @@ function createMultiSelectField(field, onChangeCallback, initialValue) {
   }
 
   // Create the custom multi-select element
-  const multiSelect = document.createElement('custom-multi-select');
+  const multiSelect = document.createElement('flexible-modal-selector');
   
-  // Set the options
-  const formattedOptions = field.options.map(option => ({
-      value: typeof option.value === 'object' ? option.value.index : option.value,
-      label: option.label,
-      id: option.id,
-      image: option.image // If your options include images
-  }));
-  
-  multiSelect.setOptions(formattedOptions);
-  
-  // Set initial value if provided
-  if (Array.isArray(initialValue)) {
-      multiSelect.value = initialValue;
-  }
-
-  // Set custom label if needed
-  if (field.placeholder) {
-      multiSelect.setlabel(field.placeholder);
-  }
-
-  // Add change event listener
-  multiSelect.addEventListener('change', (event) => {
-      const selectedValues = event.detail.values;
-      if (typeof onChangeCallback === 'function') {
-          onChangeCallback(selectedValues);
-      }
+  multiSelect.id = field.name;
+  multiSelect.setAttribute('name', field.name);
+  multiSelect.setAttribute('mode', field.mode || 'multi');
+  logger.log(field.theme);
+  multiSelect.setAttribute('theme', field.theme || 'light');
+  multiSelect.toggleDarkMode();
+  // Configurar el evento change del modal-selector
+  multiSelect.addEventListener('change', (e) => {
+      // Si hay campos condicionales que dependen de este
+          onChangeCallback(e.detail.values);
+      
   });
+  
+  if (field.options) multiSelect.setOptions(field.options);
+  // Si hay un valor inicial, establecerlo
+  logger.log("renderhtml","createMultiSelectElement", field,initialValue);
+  if (field.value || initialValue) {
+      multiSelect.setValues(initialValue || field.value);
+  }
 
   container.appendChild(multiSelect);
   return container;
@@ -858,7 +870,7 @@ export class EditModal {
     this.renderelement = new DynamicRow(data, this.columns, this.config);
     const renderhtml = this.renderelement.Renderall();
     if (HtmlContainer) document.querySelector(HtmlContainer).appendChild(renderhtml);
-    console.log("renderhtml", renderhtml);
+    logger.log("renderhtml","renderhtml", renderhtml);
   }
   ReturnHtml(data){
     this.renderelement = new DynamicRow(data, this.columns, this.config);

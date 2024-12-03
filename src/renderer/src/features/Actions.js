@@ -9,6 +9,7 @@ import { sendcommandmc } from './Minecraftconfig.js'
 import { Replacetextoread, addfilterword } from './speechconfig.js'
 import { mapedarrayobs, arrayobs,executebykeyasync } from './obcontroller.js'
 import { unflattenObject, flattenObject } from '../utils/utils.js'
+import socketManager from '../server/socketManager.js';
 const ObserverActions = new DBObserver();
 const ActionsManager = new IndexedDBManager(databases.ActionsDB,ObserverActions);
 function replaceNestedValue(obj, path, newValue) {
@@ -329,15 +330,34 @@ actionsform.initialize()
         hidden: true,
     })
     .render()
+    .setSubmitButton({ label: 'Guardar' })
     .toggleDarkMode(true);
 actionsform.addEventListener('form-change', (e) => {
     console.log('Form values changed:', e.detail);
     ///unflattenObject, flattenObject
 });
-actionsform.addEventListener('form-submit', (e) => {
-    console.log('Datos modificados:', e.detail);
-    console.log("flattenObject",flattenObject(e.detail))
-    console.log("unflattenObject",unflattenObject(flattenObject(e.detail)))
+actionsform.addEventListener('form-submit', async (e) => {
+    console.log('Datos modificados:', e.detail,"flattenObject",flattenObject(e.detail));
+    const modifiedData = unflattenObject(e.detail)
+    const alldata = await ActionsManager.getAllData()
+    const keysToCheck = [
+      { key: 'nombre', compare: 'isEqual' },
+    ];
+    const callbackFunction = (matchingObject, index, results) => {
+      console.log(`Objeto coincidente encontrado en el índice ${index}:`, matchingObject, results);
+    };
+    const primerValor = objeto => Object.values(objeto)[0];
+    const primeraKey = objeto => Object.keys(objeto)[0];
+  
+    const results = compareObjects(modifiedData, alldata, keysToCheck, callbackFunction);
+    console.log("results",results)
+    if (results.validResults.length >= 1) {
+      showAlert('error',`Objeto coincidente, cambie el ${primeraKey(results.coincidentobjects)}:`)
+    } else {
+      ActionModal.close();
+      ActionsManager.saveData(modifiedData)
+      showAlert('success','Se ha guardado el evento')
+    }
 });
 console.log(mapgetAllscenesScenenameSceneindex(getlastdatafromstorage("getScenesList",[])?.scenes),"mapgetAllscenesScenenameSceneindex");
 function getlastdatafromstorage(key,type=[]) {
@@ -503,7 +523,12 @@ async function execobsaction(data) {
     }
   }
 }
-
+async function executekeys(data) {
+  if (data.keypress && data.keypress.check) {
+    const values = data.keypress.key;
+    socketManager.emitMessage("keypress",values);
+  }
+}
 function getValueByKey(value, object) {
   return object[value];
 }
@@ -555,6 +580,7 @@ function addCustomButton(data) {
   button.addCustomEventListener('click', (event) => {
     console.log('Botón principal clickeado',event,data);
     if (data && data.obs) {execobsaction(data)}
+    if (data && data.keypress && data.keypress){ executekeys(data)}
   });
   
   console.log(data,"alldata[i]")
