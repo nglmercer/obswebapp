@@ -1,6 +1,6 @@
 import DynamicTable, { EditModal } from '../components/renderfields.js';
 import { databases, IndexedDBManager, DBObserver } from '../database/indexdb.js'
-import { Counter, TypeofData,ComboTracker, replaceVariables, compareObjects,UserInteractionTracker } from '../utils/utils.js'
+import { Counter, TypeofData,ComboTracker, replaceVariables, compareObjects,UserInteractionTracker, unflattenObject, flattenObject } from '../utils/utils.js'
 import showAlert from '../components/alerts.js';
 import {mapsvgoutline, mapsvgsolid} from "../assets/svg.js"
 import { filterworddefault,keyboard, valueboard, optionskeyboard, optionsvalueboard } from "../assets/jsondata.js"
@@ -8,7 +8,6 @@ import { getTranslation, translations } from '../translations.js';
 import { sendcommandmc } from './Minecraftconfig.js'
 import { Replacetextoread, addfilterword } from './speechconfig.js'
 import { mapedarrayobs, arrayobs,executebykeyasync } from './obcontroller.js'
-import { unflattenObject, flattenObject } from '../utils/utils.js'
 import socketManager from '../server/socketManager.js';
 const ObserverActions = new DBObserver();
 const ActionsManager = new IndexedDBManager(databases.ActionsDB,ObserverActions);

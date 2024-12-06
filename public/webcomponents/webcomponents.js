@@ -6630,9 +6630,9 @@ class GridContainer extends HTMLElement {
               }
               .container {
                   display: grid;
-                  grid-template-columns: repeat(auto-fit, minmax(200px, auto));
+                  grid-template-columns: repeat(auto-fit, minmax(150px, auto));
                   gap: 1rem;
-                  height: 100dvh;
+                  max-height: 100dvh;
                   padding: 1rem;
                   overflow-y: auto;
               }
