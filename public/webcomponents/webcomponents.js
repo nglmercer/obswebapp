@@ -7692,3 +7692,89 @@ class WindowManager extends HTMLElement {
 
 // Define the custom element
 customElements.define('window-manager', WindowManager);
+class AlertComponent extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: 'open' });
+  }
+
+  static get observedAttributes() {
+    return ['type', 'message', 'duration'];
+  }
+
+  connectedCallback() {
+    this.render();
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    if (name === 'type' || name === 'message') {
+      this.render();
+    }
+  }
+
+  render() {
+    const type = this.getAttribute('type') || 'info';
+    const message = this.getAttribute('message') || '';
+    const duration = parseInt(this.getAttribute('duration') || 3000);
+
+    this.shadowRoot.innerHTML = `
+      <style>
+        :host {
+          display: block;
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          z-index: 1000;
+        }
+        .alert {
+          padding: 15px;
+          border-radius: 4px;
+          color: white;
+          opacity: 0;
+          transform: translateX(100%);
+          transition: all 0.5s ease-in-out;
+          box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+          max-width: 300px;
+          word-wrap: break-word;
+        }
+        .alert.show {
+          opacity: 1;
+          transform: translateX(0);
+        }
+        .alert.fade-out {
+          opacity: 0;
+          transform: translateX(100%);
+        }
+        .alert-success {
+          background-color: #28a745;
+        }
+        .alert-info {
+          background-color: #17a2b8;
+        }
+        .alert-warning {
+          background-color: #ffc107;
+          color: #212529;
+        }
+        .alert-error {
+          background-color: #dc3545;
+        }
+      </style>
+      <div class="alert alert-${type} show">
+        ${message}
+      </div>
+    `;
+
+    const alertElement = this.shadowRoot.querySelector('.alert');
+    
+    setTimeout(() => {
+      alertElement.classList.add('fade-out');
+      
+      alertElement.addEventListener('transitionend', () => {
+        this.remove();
+      });
+    }, duration);
+  }
+}
+
+// Define the custom element
+customElements.define('app-alert', AlertComponent);
